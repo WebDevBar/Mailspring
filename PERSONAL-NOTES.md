@@ -62,6 +62,43 @@ Linux Unity LauncherEntry badge over DBus).
 
 ## Update log
 
+- **2026-07-19** - **Rebased onto current upstream; fork cut from 10 local commits to 4.**
+  Upstream merged our badge work (#2756) and the Hello-handshake fix (#2778), and rewrote the
+  badge transport itself (`30ff42ccf`, dropping dbus-next), so those commits are gone. Opened
+  **PR #2779** - the all-accounts badge count, reworked from a behaviour change into an opt-in
+  preference (`core.notifications.countBadgeAllAccounts`, default `false`) so upstream's default
+  is untouched. Dropped three local patches as unnecessary: the bundle-only build (upstream has
+  shipped `--skip-installers` since #2707 - it was already present in the tree our patch was
+  written against), and both icon patches (on KDE the taskbar icon comes from the launcher's
+  `Icon=` key matched via `StartupWMClass`, so `~/.local/share/applications/Mailspring.desktop`
+  themes it with no code change). Remaining local commits: #2660 backport, PR #2779's change,
+  these notes.
+
+  **⛔ Native modules: rebuild against Electron after ANY `npm install` here.**
+  Running `npm install <anything>` inside `app/` makes npm rebuild native deps with the **system
+  Node** toolchain. That silently replaced the Electron-targeted `better-sqlite3` with a
+  Node-targeted one (system Node v20 = NODE_MODULE_VERSION 115; Electron 41.7.2 needs 145), and
+  the app then failed on launch with *"We encountered a problem with your local email database"*.
+  The build still exited 0 - packaging does not validate native ABI. Fix:
+
+  ```bash
+  cd app && npm rebuild better-sqlite3 --build-from-source \
+    --runtime=electron --target=41.7.2 --dist-url=https://electronjs.org/headers
+  ```
+
+  Then rebuild the bundle and **launch it before installing** (`./mailspring --user-data-dir=$(mktemp -d)`)
+  - "build exit=0" proves packaging, not that the app runs.
+
+  **Related upstream bug:** `app/package-lock.json` (since `e3a77eaf4`, "Add an MCP server") carries
+  81 `resolved` URLs pointing at a private ConsenSys Artifactory, so `npm install` fails with
+  **E401** for anyone outside that network - which is why the `postinstall` step that would
+  normally have repaired the native module never ran. Workaround: install the one missing package
+  with `--no-save --no-package-lock --registry=https://registry.npmjs.org/`.
+
+  **Before switching to official releases:** wait for **#2660** to merge (we still depend on that
+  password-store fix; official builds won't have it and the KWallet prompts may return) and for
+  the Electron bump. Build command is now `npm run build -- --skip-installers`.
+
 - **2026-07-16** - Backported upstream PR #2660 (Linux password-store detection) into
   `app/src/browser/main.js` to fix the post-`kf6-kwallet-6.28` "could not store your password
   securely" error on Fedora KDE. See Shipped customizations. Requires a rebuild to take effect.
