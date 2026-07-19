@@ -62,6 +62,13 @@ Linux Unity LauncherEntry badge over DBus).
 
 ## Update log
 
+- **2026-07-19 (eve)** - **PR #2779 MERGED.** All three badge PRs are now upstream: #2756
+  (KDE badge), #2778 (Hello handshake), #2779 (all-accounts option). The maintainer suggested
+  the all-accounts count might even become the **default** ("probably more natural to most users").
+  Fork can shrink further at the next rebase: both the Hello fix and #2779's commit are now
+  redundant upstream, leaving just the **#2660 backport + these notes**. Once #2660 merges we can
+  switch to official releases. **#2660 still has no upstream activity - keep monitoring.**
+
 - **2026-07-19** - **Rebased onto current upstream; fork cut from 10 local commits to 4.**
   Upstream merged our badge work (#2756) and the Hello-handshake fix (#2778), and rewrote the
   badge transport itself (`30ff42ccf`, dropping dbus-next), so those commits are gone. Opened
